@@ -4,14 +4,14 @@
 
 int main(int argc, char **argv){
 	int sock, size;
-	char buf[65535];
+	char buf[2048];
 
 	if (argc < 2){
 		fprintf(stderr, "usage: ./main [dev-name]\n");
 		exit(1);
 	}
 
-	if (sock = initrawsock(argv[1], 0, 0) < 0){
+	if (sock = initrawsock(argv[1], 1, 0) < 0){
 		fprintf(stderr, "InitRawSocket:error:%s\n", argv[1]);
 		exit(1);
 	}
@@ -21,7 +21,11 @@ int main(int argc, char **argv){
 			perror("read");
 		}
 		else{
-			fprintf("%x\n\n", buf);
+#if 0
+			hexdump(buf, strlen(buf));
+#else
+			hexdump(buf, size);
+#endif
 		}
 	}
 }
@@ -30,10 +34,10 @@ int main(int argc, char **argv){
 void hexdump(u_int16_t *buf, int size){
 	int i;
 	for (i = 0;i < size; i++){
-		printf("%04x ", *(buf + i));
+		fprintf(stdout, "%04x ", *(buf + i));
 		if ((i + 1) % 8 == 0){
-			printf("\n");
+			fprintf(stdout, "\n");
 		}
 	}
-	printf("\nfin\n");
+	fprintf(stdout, "\nfin\n");
 }
