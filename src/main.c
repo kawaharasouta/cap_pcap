@@ -2,6 +2,8 @@
 #include<stdlib.h>
 #include<string.h>
 
+#include"initrawsock.h"
+
 int main(int argc, char **argv){
 	int sock, size;
 	char buf[2048];

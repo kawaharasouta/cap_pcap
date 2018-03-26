@@ -8,6 +8,8 @@
 #include	<netinet/if_ether.h>
 #include	<netinet/ip.h>
 
+#include"initrawsock.h"
+
 int initrawsock(char *device,int promiscFlag,int ipOnly)
 {
 struct ifreq	ifreq;
