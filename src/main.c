@@ -8,7 +8,10 @@
 
 #include"initrawsock.h"
 
+void output_pcaphdr(struct pcap_file_header *pcap_hdr, FILE *f);
 void print_0xpcaphdr(struct pcap_file_header *pcap_hdr);
+void output_pkthdr(struct pcap_pkthdr *pkt_hdr, FILE *fp);
+void output_packet(u_char *packet, FILE *fp, u_int size);
 
 int main(int argc, char **argv, char *envp[]){
 	int sock, size;
@@ -24,6 +27,8 @@ int main(int argc, char **argv, char *envp[]){
 		exit(1);
 	}
 
+	char *file_name = "test.pcap";
+
 	//printf("sock: %d\n",sock);
 
 	struct pcap_file_header pcap_hdr;
@@ -33,7 +38,8 @@ int main(int argc, char **argv, char *envp[]){
 	struct timezone tz;
 	gettimeofday(&tv, &tz);*/
 
-	pcap_hdr.magic = (bpf_int32)0xa1b2c3d4;
+	pcap_hdr.magic = 0xa1b2c3d4;
+	//pcap_hdr.magic = htonl(pcap_hdr.magic);
 	//pcap_hdr.magic = TCPDUMP_MAGIC;???
 	pcap_hdr.version_major = PCAP_VERSION_MAJOR;
 	pcap_hdr.version_minor = PCAP_VERSION_MINOR;
@@ -46,27 +52,31 @@ int main(int argc, char **argv, char *envp[]){
 
 	FILE *fp;
 	fp = fopen("test.pcap", "wb");
-
+	//u_int32_t var = 0xffffffff;
+	//fwrite(&var, sizeof(var), 1, fp);
+	
+	output_pcaphdr(&pcap_hdr, fp);
+	//print_0xpcaphdr(&pcap_hdr);
 	while (1){
 		if (((size = read(sock, buf, sizeof(buf))) <= 0)){
 			perror("read");
 		}
 		else{
 #if 1
-			printf("***\n");
+			printf("***\nsize:%d\n",size);
 			gettimeofday(&(pkt_hdr.ts), 0);
 			pkt_hdr.caplen = size;
 			pkt_hdr.len = size;
-
-			print_0xpcaphdr(&pcap_hdr);
+			output_pkthdr(&pkt_hdr, fp);
+			//output_packet(buf, fp, strlen(buf));
 #else
 			printf("size: %d\n",size);
 			hexdump(buf, size);
 #endif
-
-			fclose(fp);
 		}
+		size = 0;
 	}
+	fclose(fp);
 }
 
 
@@ -82,7 +92,30 @@ void hexdump(u_int16_t *buf, int size){
 }
 
 void output_pcaphdr(struct pcap_file_header *pcap_hdr, FILE *fp){
+	fwrite(pcap_hdr, sizeof(struct pcap_file_header), 1, fp);
 	
+	//pcap_hdr->magic = htonl(pcap_hdr->magic);
+	//fwrite(&(pcap_hdr->magic), sizeof(pcap_hdr->magic), 1, fp);
+	//fwrite(&buf16, sizeof(buf16), 1, ff);
+
+	fflush(fp);
+}
+
+void output_pkthdr(struct pcap_pkthdr *pkt_hdr, FILE *fp){
+	//fwrite(pkt_hdr, sizeof(struct pcap_pkthdr), 1, fp);
+	u_int32_t ts_sec, ts_usec;
+	ts_sec = (u_int32_t) pkt_hdr->ts.tv_sec;
+	ts_usec = (u_int32_t) pkt_hdr->ts.tv_usec;
+	//fwrite(&(pkt_hdr->ts.tv_sec), sizeof(pkt_hdr->ts.tv_sec), 1, fp);
+	fwrite(&ts_sec, sizeof(u_int32_t), 1, fp);
+	fwrite(&ts_usec, sizeof(u_int32_t), 1, fp);
+
+
+	fflush(fp);
+}
+
+void output_packet(u_char *packet, FILE *fp, u_int size){
+	fwrite(packet, size, 1, fp);
 }
 
 void print_0xpcaphdr(struct pcap_file_header *pcap_hdr){
