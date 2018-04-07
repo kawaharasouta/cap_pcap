@@ -57,24 +57,38 @@ int main(int argc, char **argv, char *envp[]){
 	
 	output_pcaphdr(&pcap_hdr, fp);
 	//print_0xpcaphdr(&pcap_hdr);
+
+	int flag = 0;
 	while (1){
 		if (((size = read(sock, buf, sizeof(buf))) <= 0)){
 			perror("read");
 		}
-		else{
 #if 1
-			printf("***\nsize:%d\n",size);
+		else{
+			printf("***\nsize:%d\nstrlen:%d\n", size, strlen(buf));
 			gettimeofday(&(pkt_hdr.ts), 0);
 			pkt_hdr.caplen = size;
 			pkt_hdr.len = size;
 			output_pkthdr(&pkt_hdr, fp);
-			//output_packet(buf, fp, strlen(buf));
-#else
-			printf("size: %d\n",size);
+			output_packet(buf, fp, size);
 			hexdump(buf, size);
-#endif
 		}
-		size = 0;
+#else
+			//hexdump(buf, size);
+		else if(flag == 0){
+			printf("***\nsize:%d\nstrlen:%d\n", size, strlen(buf));
+			gettimeofday(&(pkt_hdr.ts), 0);
+			pkt_hdr.caplen = size;
+			pkt_hdr.len = size;
+			output_pkthdr(&pkt_hdr, fp);
+			output_packet(buf, fp, size);
+			hexdump(buf, size);
+			flag = 1;
+		}
+		else{
+			flag = 0;
+		}
+#endif
 	}
 	fclose(fp);
 }
@@ -109,6 +123,8 @@ void output_pkthdr(struct pcap_pkthdr *pkt_hdr, FILE *fp){
 	//fwrite(&(pkt_hdr->ts.tv_sec), sizeof(pkt_hdr->ts.tv_sec), 1, fp);
 	fwrite(&ts_sec, sizeof(u_int32_t), 1, fp);
 	fwrite(&ts_usec, sizeof(u_int32_t), 1, fp);
+	fwrite(&(pkt_hdr->caplen), sizeof(pkt_hdr->caplen), 1, fp);
+	fwrite(&(pkt_hdr->len), sizeof(pkt_hdr->len), 1, fp);
 
 
 	fflush(fp);
@@ -127,3 +143,4 @@ void print_0xpcaphdr(struct pcap_file_header *pcap_hdr){
 	printf("%08x\n", htonl(pcap_hdr->snaplen));
 	printf("%08x\n", htonl(pcap_hdr->linktype));
 }
+
