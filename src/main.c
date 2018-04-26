@@ -132,6 +132,7 @@ void output_pkthdr(struct pcap_pkthdr *pkt_hdr, FILE *fp){
 
 void output_packet(u_char *packet, FILE *fp, u_int size){
 	fwrite(packet, size, 1, fp);
+	fflush(fp);
 }
 
 void print_0xpcaphdr(struct pcap_file_header *pcap_hdr){
